@@ -49,14 +49,19 @@ let program = createProgram(gl, vertexShader, fragmentShader);
 
 var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
 
+var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+
 var positionBuffer = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-// three 2d points
+// 2D pixel points
 var positions = [
-  0, 0,
-  0, 0.5,
-  0.7, 0,
+  10, 20,
+  80, 20,
+  10, 30,
+  10, 30,
+  80, 20,
+  80, 30,
 ];
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -72,6 +77,8 @@ var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to
 var offset = 0;        // start at the beginning of the buffer
 gl.vertexAttribPointer(
     positionAttributeLocation, size, type, normalize, stride, offset)
+
+
 
 function resizeCanvasToDisplaySize(canvas) {
   // Lookup the size the browser is displaying the canvas in CSS pixels.
@@ -105,7 +112,11 @@ gl.useProgram(program);
 // Bind the attribute/buffer set we want.
 gl.bindVertexArray(vao);
 
+// Pass in the canvas resolution so we can convert from
+// pixels to clip space in the shader
+gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+
 var primitiveType = gl.TRIANGLES;
 var offset = 0;
-var count = 3;
+var count = 6;
 gl.drawArrays(primitiveType, offset, count);
