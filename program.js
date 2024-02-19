@@ -1,5 +1,6 @@
-let canvas = document.querySelector("#c")
 
+
+let canvas = document.querySelector("#c")
 let gl = canvas.getContext("webgl2");
 
 if (!gl) {
@@ -20,10 +21,28 @@ function randomInt(range) {
 
 // Fill the buffer with the values that define a rectangle.
 function setRectangle(gl, x, y, width, height) {
-  var x1 = x;
-  var x2 = x + width;
-  var y1 = y;
-  var y2 = y + height;
+  let x1 = x;
+  let x2 = x + width;
+  let y1 = y;
+  let y2 = y + height;
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+     x1, y1,
+     x2, y1,
+     x1, y2,
+     x1, y2,
+     x2, y1,
+     x2, y2,
+  ]), gl.STATIC_DRAW);
+}
+
+function setSillyShape(gl, x, y, size) {
+  let x1 = x;
+  let x2 = x + size;
+  let y1 = y;
+  let y2 = y + size;
+  let x3 = x2/2;
+  let y3 = y2/2;
+
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
      x1, y1,
      x2, y1,
@@ -68,26 +87,29 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // Links shaders
 let program = createProgram(gl, vertexShader, fragmentShader);
 
-var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
+let positionAttributeLocation = gl.getAttribLocation(program, "a_position");
 
-var resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+let resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
 
-var colorLocation = gl.getUniformLocation(program, "u_color");
+let colorLocation = gl.getUniformLocation(program, "u_color");
 
-var positionBuffer = gl.createBuffer();
+let timex = gl.getUniformLocation(program, "tx");
+let timey = gl.getUniformLocation(program, "ty");
+
+let positionBuffer = gl.createBuffer();
 
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-var vao = gl.createVertexArray();
+let vao = gl.createVertexArray();
 gl.bindVertexArray(vao);
 
 gl.enableVertexAttribArray(positionAttributeLocation);
 
-var size = 2;          // 2 components per iteration
-var type = gl.FLOAT;   // the data is 32bit floats
-var normalize = false; // don't normalize the data
-var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-var offset = 0;        // start at the beginning of the buffer
+let size = 2;          // 2 components per iteration
+let type = gl.FLOAT;   // the data is 32bit floats
+let normalize = false; // don't normalize the data
+let stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+let offset = 0;        // start at the beginning of the buffer
 gl.vertexAttribPointer(
     positionAttributeLocation, size, type, normalize, stride, offset)
 
@@ -131,19 +153,45 @@ gl.bindVertexArray(vao);
 // pixels to clip space in the shader
 gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
 
-for (var ii = 0; ii < 50; ++ii) {
-  // Put a rectangle in the position buffer
-  setRectangle(
-      gl, randomInt(300), randomInt(300), randomInt(300), randomInt(300));
+// Draw the rectangle.
+let primitiveType = gl.TRIANGLES;
+let count = 6;
 
-  // Set a random color.
-  gl.uniform4f(colorLocation, Math.random(), Math.random(), Math.random(), 1);
+let w = window.innerWidth;
+let h = window.innerHeight;
 
-  // Draw the rectangle.
-  var primitiveType = gl.TRIANGLES;
-  var offset = 0;
-  var count = 6;
-  gl.drawArrays(primitiveType, offset, count);
+
+// CAREFUL recursive function
+function animationLoop(prevTime){
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  for (let ii = 0; ii < 1000; ++ii) {
+    // Put a rectangle in the position buffer
+
+    let x = randomInt(w);
+    let y = randomInt(h);
+
+    // setRectangle(gl, x, y, 20, 20);
+
+    setSillyShape(gl, x, y, 2);
+
+    // Set a random color.
+    gl.uniform4f(colorLocation, 1, 1, 1, 1);
+
+    gl.uniform1f(timex, (prevTime % 17));
+    gl.uniform1f(timey, (Date.now() % 13));
+
+    gl.drawArrays(primitiveType, offset, count);
+  }
+
+  // recursion
+  setTimeout(() => {
+    animationLoop(Date.now());
+  }, 61);
 }
+
+console.log(Date.now());
+animationLoop(Date.now());
+
 
 
